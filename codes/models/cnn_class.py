@@ -67,7 +67,7 @@ class CNNClassifier(nn.Module):
         result = self.fc(out)
 
         if return_loss:
-            loss = cross_entropy(result, X['y'].to(device))
+            loss = cross_entropy(result, X['y'].to(self.device))
         else:
             loss = None
         return result, loss
