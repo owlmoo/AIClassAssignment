@@ -1,7 +1,9 @@
 import torch
 import os
+import sys
 from time import localtime
 from tqdm import tqdm
+from tensorboardX import SummaryWriter
 from my_dataset import MyDataLoader
 from models.lstm_class import LSTMClassifier
 from models.cnn_class import CNNClassifier
@@ -26,19 +28,22 @@ def valid(model, test_loader):
             # 取得对应的预测值
             normal_pred = pred[normal_index]
             normal_label = data_item['y'][normal_index]
-            # 找到所有标签我为正常,预测为异常的数据
+            # 找到所有标签为正常,预测为异常的数据
             tf_num += (torch.sum(normal_pred.cpu() != normal_label))
     print("total_acc:{} total_tf_num:{} total:num:{}".format(total_acc, tf_num, total_num))
     return total_acc / total_num, tf_num / total_num
 
 
-def train(model, train_loader, opt):
+def train(model, train_loader, opt, steps):
     model.train()
     for i, data_item in tqdm(enumerate(train_loader)):
         _, loss = model(data_item, return_loss=True)
+        writer.add_scalar('train_loss', loss.data, steps+1)
+        steps += 1
         opt.zero_grad()
         loss.backward()
         opt.step()
+    return steps
 
 # 对模型进行测试
 def test_model(model, path, test_loader):
@@ -53,7 +58,7 @@ def test_model(model, path, test_loader):
 # 对模型进行训练
 def train_model(model, train_loader, valid_loader, total_epoch=20):
     opt = torch.optim.Adam(model.parameters(), lr=1e-4)
-
+    steps = 0
     checkpoint_path = '../checkpoint'
     if os.path.exists(checkpoint_path):
         pass
@@ -62,8 +67,10 @@ def train_model(model, train_loader, valid_loader, total_epoch=20):
 
     print('start to train:')
     for epoch_ in range(total_epoch):
-        train(model, train_loader, opt)
-        valid(model, valid_loader)
+        steps = train(model, train_loader, opt, steps)
+        valid_acc, valid_tf = valid(model, valid_loader)
+        writer.add_scalar('valid_acc', valid_acc, epoch_+1)
+        writer.add_scalar('valid_tf', valid_tf, epoch_+1)
     print('finished train')
     ti = localtime()
     write_path = '/lstm_{}_{}h{}m.tar'.format(ti.tm_mday, ti.tm_hour, ti.tm_min)
@@ -77,19 +84,27 @@ if __name__ == '__main__':
                                 batch_size=512, drop_last=False)
 
     device = torch.device('cuda:0')
+    writer = SummaryWriter('../log')
 
     # LSTM的参数
-    input_dim = 128
     lstm_layer = 2
     bidirectional = True
 
-    model = LSTMClassifier(input_dim=input_dim, device=device, lstm_layers=lstm_layer, bidirectional=False)
-    # model = CNNClassifier(device=device)
-    # model = MlpClassifier(seq_len=532, input_dim=128, device=device)
-    train_model(model, train_loader, valid_loader, total_epoch=10)
+    modelType = sys.argv[1]
+    epochs = int(sys.argv[2])
 
-    test_loader = MyDataLoader('../file/pre_datas_train.npy', '../file/pre_datas_train_label.npy',
-                               batch_size=512, drop_last=False)
-
-    model_path = " "
-    test_model(model, model_path, test_loader)
+    if modelType == 'LSTM':
+        model = LSTMClassifier(input_dim=128, device=device, lstm_layers=lstm_layer, bidirectional=False)
+    elif modelType == 'CNN':
+        model = CNNClassifier(device=device)
+    elif modelType == 'MLP':
+        model = MlpClassifier(seq_len=532, input_dim=128, device=device)
+    else:
+        model = None
+    train_model(model, train_loader, valid_loader, total_epoch=epochs)
+    writer.close()
+    # test_loader = MyDataLoader('../file/pre_datas_train.npy', '../file/pre_datas_train_label.npy',
+    #                            batch_size=512, drop_last=False)
+    #
+    # model_path = " "
+    # test_model(model, model_path, test_loader)

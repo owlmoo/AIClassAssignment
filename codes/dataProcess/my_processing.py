@@ -6,13 +6,12 @@ from sklearn.model_selection import train_test_split
 import torch
 
 vec_dir = "../../file/word2vec.pickle"
-pre_datas_train = "file/pre_datas_train.npy"
-pre_datas_label_train = "file/pre_datas_train_label.npy"
-pre_datas_test = "file/pre_datas_test.npy"
-pre_datas_label_test = "file/pre_datas_test_label.npy"
-pre_datas_valid = "file/pre_datas_valid.npy"
-pre_datas_label_valid = "file/pre_datas_valid_label.npy"
-process_datas_dir = "file/process_datas.pickle"
+pre_datas_train = "../../file/pre_datas_train.npy"
+pre_datas_label_train = "../../file/pre_datas_train_label.npy"
+pre_datas_test = "../../file/pre_datas_test.npy"
+pre_datas_label_test = "../../file/pre_datas_test_label.npy"
+pre_datas_valid = "../../file/pre_datas_valid.npy"
+pre_datas_label_valid = "../../file/pre_datas_valid_label.npy"
 
 # 变成onehot形式
 def to_categorical(labels):

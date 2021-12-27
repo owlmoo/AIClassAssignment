@@ -1,4 +1,3 @@
-import torch
 from torch import nn
 from torch.nn.functional import cross_entropy
 
@@ -57,6 +56,8 @@ class CNNClassifier(nn.Module):
             )
         ).to(self.device)
 
+        self.init_param()
+
     def forward(self, X, return_loss=False):
         out = X['x'].to(self.device).permute(0, 2, 1)
         out = self.conv1(out)
@@ -71,3 +72,8 @@ class CNNClassifier(nn.Module):
         else:
             loss = None
         return result, loss
+
+    def init_param(self):
+        for m in self.parameters():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)

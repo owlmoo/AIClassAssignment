@@ -1,5 +1,4 @@
 from torch import nn
-import torch
 from torch.nn.functional import cross_entropy
 
 
