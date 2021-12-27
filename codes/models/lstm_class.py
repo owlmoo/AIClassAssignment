@@ -36,7 +36,8 @@ class LSTMClassifier(nn.Module):
         # torch.flip函数在给定的维度上将数组翻转
         # torch.argsort函数得出一个索引列表，按照这个索引列表取出元素可以得到排好序的列表
         # 降序变成升序
-        index = torch.flip(torch.argsort(length), [0])
+        index = torch.argsort(length, descending=True)
+        # index = torch.flip(torch.argsort(length), [0])
         x = x[index]
         length = length[index]
         pack_x = pack_padded_sequence(x, length, batch_first=True, enforce_sorted=True)

@@ -5,9 +5,13 @@ from time import localtime
 from tqdm import tqdm
 from tensorboardX import SummaryWriter
 from my_dataset import MyDataLoader
-from models.lstm_class import LSTMClassifier
-from models.cnn_class import CNNClassifier
+
 from models.mlp_class import MlpClassifier
+from models.cnn_class import CNNClassifier
+# from models.cnn_class2 import CNNClassifier
+# from models.cnn_class3 import CNNClassifier
+from models.lstm_class import LSTMClassifier
+
 
 def valid(model, test_loader):
     model.eval()
@@ -31,6 +35,7 @@ def valid(model, test_loader):
             # 找到所有标签为正常,预测为异常的数据
             tf_num += (torch.sum(normal_pred.cpu() != normal_label))
     print("total_acc:{} total_tf_num:{} total:num:{}".format(total_acc, tf_num, total_num))
+    print("acc_rate:{} tf_rate:{}".format(total_acc / total_num, tf_num / total_num))
     return total_acc / total_num, tf_num / total_num
 
 
@@ -60,11 +65,6 @@ def train_model(model, train_loader, valid_loader, total_epoch=20):
     opt = torch.optim.Adam(model.parameters(), lr=1e-4)
     steps = 0
     checkpoint_path = '../checkpoint'
-    if os.path.exists(checkpoint_path):
-        pass
-    else:
-        os.mkdir(checkpoint_path)
-
     print('start to train:')
     for epoch_ in range(total_epoch):
         steps = train(model, train_loader, opt, steps)
