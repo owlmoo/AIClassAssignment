@@ -58,23 +58,26 @@ def test_model(model, path, test_loader):
         model.load_state_dict(torch.load(path))
     acc_rate, tf_rate = valid(model, test_loader)
     print('acc_rate:{}'.format(acc_rate))
-    print('误报率:{}'.format(tf_rate))
+    print('tf_rate:{}'.format(tf_rate))
 
 # 对模型进行训练
 def train_model(model, train_loader, valid_loader, total_epoch=20):
     opt = torch.optim.Adam(model.parameters(), lr=1e-4)
     steps = 0
     checkpoint_path = '../checkpoint'
+    ti = localtime()
+    write_path = '/lstm_{}.tar'.format(ti.tm_mday)
     print('start to train:')
+    best_acc = 0.0
     for epoch_ in range(total_epoch):
         steps = train(model, train_loader, opt, steps)
         valid_acc, valid_tf = valid(model, valid_loader)
         writer.add_scalar('valid_acc', valid_acc, epoch_+1)
         writer.add_scalar('valid_tf', valid_tf, epoch_+1)
+        if valid_acc > best_acc:
+            best_acc = valid_acc
+            torch.save(model.state_dict(), checkpoint_path + write_path)
     print('finished train')
-    ti = localtime()
-    write_path = '/lstm_{}_{}h{}m.tar'.format(ti.tm_mday, ti.tm_hour, ti.tm_min)
-    torch.save(model.state_dict(), checkpoint_path + write_path)
 
 
 if __name__ == '__main__':
@@ -84,7 +87,7 @@ if __name__ == '__main__':
                                 batch_size=512, drop_last=False)
 
     device = torch.device('cuda:0')
-    writer = SummaryWriter('../log')
+    # writer = SummaryWriter('../log')
 
     # LSTM的参数
     lstm_layer = 2
@@ -94,17 +97,17 @@ if __name__ == '__main__':
     epochs = int(sys.argv[2])
 
     if modelType == 'LSTM':
-        model = LSTMClassifier(input_dim=128, device=device, lstm_layers=lstm_layer, bidirectional=False)
+        model = LSTMClassifier(input_dim=128, device=device, lstm_layers=lstm_layer, bidirectional=bidirectional)
     elif modelType == 'CNN':
         model = CNNClassifier(device=device)
     elif modelType == 'MLP':
         model = MlpClassifier(seq_len=532, input_dim=128, device=device)
     else:
         model = None
-    train_model(model, train_loader, valid_loader, total_epoch=epochs)
-    writer.close()
-    # test_loader = MyDataLoader('../file/pre_datas_train.npy', '../file/pre_datas_train_label.npy',
-    #                            batch_size=512, drop_last=False)
-    #
-    # model_path = " "
-    # test_model(model, model_path, test_loader)
+    # train_model(model, train_loader, valid_loader, total_epoch=epochs)
+    # writer.close()
+    test_loader = MyDataLoader('../file/pre_datas_train.npy', '../file/pre_datas_train_label.npy',
+                               batch_size=512, drop_last=False)
+
+    model_path = "../checkpoint/lstm_28_12h58m.tar"
+    test_model(model, model_path, test_loader)
